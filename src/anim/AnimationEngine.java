@@ -179,19 +179,25 @@ public class AnimationEngine {
 		// Loop Through All The Timelines
 		// And Update Transformations Accordingly
 		// (You WILL Need To Use this.scene)
-
 		for(AnimTimeline a: timelines.values()){
-			a.frames;
+			for(AnimKeyframe a0 :a.frames){
+				// get pair of surrounding frames
+				// (function in AnimTimeline)
+				int f = a0.frame;
+				AnimKeyframe[] surroundingPair = new AnimKeyframe[2];
+				a.getSurroundingFrames(f, surroundingPair);
+				
+				Matrix4 start = surroundingPair[0].transformation;
+				Matrix4 middle = a0.transformation;
+				Matrix4 end = surroundingPair[1].transformation;
+				
+				// get interpolation ratio
+
+				// interpolate translations linearly
+
+				// polar decompose axis matrices
+			}
 		}
-		
-		// get pair of surrounding frames
-		// (function in AnimTimeline)
-
-		// get interpolation ratio
-
-		// interpolate translations linearly
-
-		// polar decompose axis matrices
 
     // interpolate rotation matrix (3 modes of interpolation) and linearly interpolate scales
 
