@@ -186,16 +186,78 @@ public class AnimationEngine {
 				int f = a0.frame;
 				AnimKeyframe[] surroundingPair = new AnimKeyframe[2];
 				a.getSurroundingFrames(f, surroundingPair);
-				
+								
 				Matrix4 start = surroundingPair[0].transformation;
-				Matrix4 middle = a0.transformation;
 				Matrix4 end = surroundingPair[1].transformation;
 				
 				// get interpolation ratio
-
+				float ratio = getRatio(surroundingPair[0].frame, surroundingPair[1].frame, f);
+				
 				// interpolate translations linearly
-
+				Vector3 startTranslate = new Vector3(start.getTrans());
+				Vector3 endTranslate = new Vector3(end.getTrans());
+				
+				Vector3 ratioTranslate = endTranslate.clone().sub(startTranslate).mul(ratio).add(startTranslate);
+				
 				// polar decompose axis matrices
+				Matrix3 startRS = new Matrix3(start.getAxes());
+				Matrix3 endRS = new Matrix3(end.getAxes());
+				
+				Matrix3 startScale = new Matrix3();
+				Matrix3 endScale = new Matrix3();
+				
+				Matrix3 startRot = new Matrix3();
+				Matrix3 endRot = new Matrix3();
+				
+				//outQ rotation, outP is scale
+				startRS.polar_decomp(startScale, startRot);
+				endRS.polar_decomp(endScale, endRot);
+				
+				Matrix3 ratioScale = new Matrix3().interpolate(startScale, endScale, ratio);
+				
+				Matrix3 ratioRot = new Matrix3();
+				if(rotationMode == rotationMode.EULER){
+					float startThetaX = (float) Math.atan2(startRot.get(2,1), startRot.get(2, 2));
+					float startThetaY = (float) Math.atan2(-startRot.get(2,0), Math.sqrt(startRot.get(2,1) * startRot.get(2,1) + startRot.get(2,2) * startRot.get(2,2)));
+					float startThetaZ = (float) Math.atan2(startRot.get(1,0), startRot.get(0,0));
+					
+					float endThetaX = (float) Math.atan2(endRot.get(2,1), endRot.get(2, 2));
+					float endThetaY = (float) Math.atan2(-endRot.get(2,0), Math.sqrt(endRot.get(2,1) * endRot.get(2,1) + endRot.get(2,2) * endRot.get(2,2)));
+					float endThetaZ = (float) Math.atan2(endRot.get(1,0), endRot.get(0,0));
+					
+					float ratioThetaX = ratio * (endThetaX-startThetaX) + startThetaX;
+					float ratioThetaY = ratio * (endThetaY-startThetaY) + startThetaY;
+					float ratioThetaZ = ratio * (endThetaZ-startThetaZ) + startThetaZ;
+					
+					Matrix3 rX = new Matrix3(
+							1.0f, 0.0f, 0.0f,
+							0.0f, (float) Math.cos(ratioThetaX), (float) (-1 * Math.sin(ratioThetaX)),
+							0.0f, (float) Math.sin(ratioThetaX), (float) Math.cos(ratioThetaX));
+
+					Matrix3 rY = new Matrix3(
+							(float) Math.cos(ratioThetaY), 0.0f, (float) Math.sin(ratioThetaY),
+							0.0f, 1.0f, 0.0f,
+							(float) (-1 * Math.sin(ratioThetaY)), 0.0f, (float) Math.cos(ratioThetaY));
+					
+					Matrix3 rZ = new Matrix3(
+							(float) Math.cos(ratioThetaZ), (float) (-1 * Math.sin(ratioThetaZ)), 0.0f,
+							(float) Math.sin(ratioThetaZ), (float) Math.cos(ratioThetaZ), 0.0f,
+							0.0f, 0.0f, 1.0f);
+					
+					ratioScale.set(rZ.clone().mulBefore(rY.clone().mulBefore(rX)));
+				}
+				else if(rotationMode == rotationMode.QUAT_LERP){
+					Quat startQ = new Quat(startRot);
+					Quat endQ = new Quat(endRot);
+					
+					Quat transQ = endQ.clone().add(startQ.clone().negate()).add(startQ);
+					transQ.toRotationMatrix(ratioRot);
+				}
+				else{
+					Quat startQ = new Quat(startRot);
+					Quat endQ = new Quat(endRot);
+				}
+				
 			}
 		}
 
