@@ -180,6 +180,10 @@ public class AnimationEngine {
 		// And Update Transformations Accordingly
 		// (You WILL Need To Use this.scene)
 
+		for(AnimTimeline a: timelines.values()){
+			a.frames;
+		}
+		
 		// get pair of surrounding frames
 		// (function in AnimTimeline)
 
