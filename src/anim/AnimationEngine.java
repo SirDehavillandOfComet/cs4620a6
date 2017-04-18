@@ -218,14 +218,14 @@ public class AnimationEngine {
 				
 				Matrix3 ratioRot = new Matrix3();
 				if(rotationMode == rotationMode.EULER){
-					float startThetaX = (float) Math.atan2(startRot.get(2,1), startRot.get(2, 2));
-					float startThetaY = (float) Math.atan2(-startRot.get(2,0), Math.sqrt(startRot.get(2,1) * startRot.get(2,1) + startRot.get(2,2) * startRot.get(2,2)));
-					float startThetaZ = (float) Math.atan2(startRot.get(1,0), startRot.get(0,0));
+					float startThetaX = eulerDecomp(startRot).x;
+					float startThetaY = eulerDecomp(startRot).y;
+					float startThetaZ = eulerDecomp(startRot).z;
 					
-					float endThetaX = (float) Math.atan2(endRot.get(2,1), endRot.get(2, 2));
-					float endThetaY = (float) Math.atan2(-endRot.get(2,0), Math.sqrt(endRot.get(2,1) * endRot.get(2,1) + endRot.get(2,2) * endRot.get(2,2)));
-					float endThetaZ = (float) Math.atan2(endRot.get(1,0), endRot.get(0,0));
-					
+					float endThetaX = eulerDecomp(endRot).x;
+					float endThetaY = eulerDecomp(endRot).y;
+					float endThetaZ = eulerDecomp(endRot).z;
+
 					float ratioThetaX = ratio * (endThetaX-startThetaX) + startThetaX;
 					float ratioThetaY = ratio * (endThetaY-startThetaY) + startThetaY;
 					float ratioThetaZ = ratio * (endThetaZ-startThetaZ) + startThetaZ;
