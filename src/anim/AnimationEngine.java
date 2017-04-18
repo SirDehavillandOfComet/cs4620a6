@@ -213,6 +213,7 @@ public class AnimationEngine {
 				startRS.polar_decomp(startScale, startRot);
 				endRS.polar_decomp(endScale, endRot);
 				
+			    // interpolate rotation matrix (3 modes of interpolation) and linearly interpolate scales
 				Matrix3 ratioScale = new Matrix3().interpolate(startScale, endScale, ratio);
 				
 				Matrix3 ratioRot = new Matrix3();
@@ -249,22 +250,27 @@ public class AnimationEngine {
 				else if(rotationMode == rotationMode.QUAT_LERP){
 					Quat startQ = new Quat(startRot);
 					Quat endQ = new Quat(endRot);
-					
-					Quat transQ = endQ.clone().add(startQ.clone().negate()).add(startQ);
-					transQ.toRotationMatrix(ratioRot);
+					Quat ratioQ = endQ.clone().add(startQ.clone().negate()).add(startQ);
+					ratioQ.toRotationMatrix(ratioRot);
 				}
 				else{
 					Quat startQ = new Quat(startRot);
 					Quat endQ = new Quat(endRot);
+					Quat ratioQ = Quat.slerp(startQ, endQ, ratio);
+					ratioQ.toRotationMatrix(ratioRot);
 				}
+
+				// combine interpolated R,S,and T
+				Matrix3 newRS = ratioRot.clone().mulBefore(ratioScale);
+				Matrix4 transform = new Matrix4(newRS);
+				transform.set(0, 3, ratioTranslate.x);
+				transform.set(1, 3, ratioTranslate.y);
+				transform.set(2, 3, ratioTranslate.z);
+				a0.transformation.set(transform);
 				
+				this.scene.sendEvent(new SceneTransformationEvent(a.object));
 			}
 		}
-
-    // interpolate rotation matrix (3 modes of interpolation) and linearly interpolate scales
-
-		// combine interpolated R,S,and T
-		
 	}
 
 	public static float getRatio(int min, int max, int cur) {
