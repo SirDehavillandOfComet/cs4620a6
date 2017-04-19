@@ -176,10 +176,13 @@ public class AnimationEngine {
 	 */
 	
 	public void updateTransformations() {
+		//System.out.println(timelines.size());
 		// Loop Through All The Timelines
 		// And Update Transformations Accordingly
 		// (You WILL Need To Use this.scene)
 		for(AnimTimeline a: timelines.values()){
+			System.out.println("--- start ---");
+			System.out.println(a.object);
 			// get pair of surrounding frames
 			// (function in AnimTimeline)
 			int f = this.curFrame;
@@ -189,6 +192,9 @@ public class AnimationEngine {
 			Matrix4 start = surroundingPair[0].transformation;
 			Matrix4 end = surroundingPair[1].transformation;
 			
+			System.out.println("start = " + start);
+			System.out.println("end = " + end);
+			
 			// get interpolation ratio
 			float ratio = getRatio(surroundingPair[0].frame, surroundingPair[1].frame, f);
 			
@@ -196,11 +202,19 @@ public class AnimationEngine {
 			Vector3 startTranslate = new Vector3(start.getTrans());
 			Vector3 endTranslate = new Vector3(end.getTrans());
 			
+			Vector3 oneMinusAlphaT0 = startTranslate.clone().mul(1-ratio);
+			Vector3 alphaT1 = endTranslate.clone().mul(ratio);
+			
+			//Vector3 ratioTranslate = 
+			
 			Vector3 ratioTranslate = endTranslate.clone().sub(startTranslate).mul(ratio).add(startTranslate);
 			
 			// polar decompose axis matrices
 			Matrix3 startRS = new Matrix3(start.getAxes());
 			Matrix3 endRS = new Matrix3(end.getAxes());
+			
+			System.out.println("startRs = " + startRS);
+			System.out.println("endRs = " + endRS);
 			
 			Matrix3 startScale = new Matrix3();
 			Matrix3 endScale = new Matrix3();
@@ -209,11 +223,17 @@ public class AnimationEngine {
 			Matrix3 endRot = new Matrix3();
 			
 			//outQ rotation, outP is scale
-			startRS.polar_decomp(startScale, startRot);
-			endRS.polar_decomp(endScale, endRot);
+			startRS.polar_decomp(startRot, startScale);
+			endRS.polar_decomp(endRot, endScale);
+			
+			//System.out.println("startScale = " + startScale);
+			//System.out.println("startRot = " + startRot);
+			//System.out.println("endScale = " + endScale);
+			//System.out.println("endRot = " + endRot);
 			
 		    // interpolate rotation matrix (3 modes of interpolation) and linearly interpolate scales
 			Matrix3 ratioScale = new Matrix3().interpolate(startScale, endScale, ratio);
+			System.out.println("ratioScale = " + ratioScale);
 			
 			Matrix3 ratioRot = new Matrix3();
 			if(rotationMode == rotationMode.EULER){
@@ -260,16 +280,23 @@ public class AnimationEngine {
 			}
 
 			// combine interpolated R,S,and T
-			Matrix3 newRS = ratioRot.clone().mulBefore(ratioScale);
+			Matrix3 newRS = new Matrix3();
+			//FIX THIS: FUNCTION ISN'T OUTPUTTING WHAT IT SHOULD
+			newRS.set(ratioRot.clone().mulAfter(ratioScale));
+			
+			System.out.println("RatioRot" +ratioRot);
+			System.out.println("NewRS" + newRS);
 			Matrix4 transform = new Matrix4(newRS);
 			transform.set(0, 3, ratioTranslate.x);
 			transform.set(1, 3, ratioTranslate.y);
 			transform.set(2, 3, ratioTranslate.z);
 			
 			a.object.transformation.set(transform);
-			System.out.println(transform);
+			System.out.println("Final Transform " + transform);
+			//System.out.println("");
 			this.scene.sendEvent(new SceneTransformationEvent(a.object));
 		}
+		System.out.println("--- end ---");
 	}
 
 	public static float getRatio(int min, int max, int cur) {
