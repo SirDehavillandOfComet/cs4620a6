@@ -205,9 +205,7 @@ public class AnimationEngine {
 			Vector3 oneMinusAlphaT0 = startTranslate.clone().mul(1-ratio);
 			Vector3 alphaT1 = endTranslate.clone().mul(ratio);
 			
-			//Vector3 ratioTranslate = 
-			
-			Vector3 ratioTranslate = endTranslate.clone().sub(startTranslate).mul(ratio).add(startTranslate);
+			Vector3 ratioTranslate = oneMinusAlphaT0.clone().add(alphaT1);
 			
 			// polar decompose axis matrices
 			Matrix3 startRS = new Matrix3(start.getAxes());
@@ -225,11 +223,6 @@ public class AnimationEngine {
 			//outQ rotation, outP is scale
 			startRS.polar_decomp(startRot, startScale);
 			endRS.polar_decomp(endRot, endScale);
-			
-			//System.out.println("startScale = " + startScale);
-			//System.out.println("startRot = " + startRot);
-			//System.out.println("endScale = " + endScale);
-			//System.out.println("endRot = " + endRot);
 			
 		    // interpolate rotation matrix (3 modes of interpolation) and linearly interpolate scales
 			Matrix3 ratioScale = new Matrix3().interpolate(startScale, endScale, ratio);
@@ -269,7 +262,11 @@ public class AnimationEngine {
 			else if(rotationMode == rotationMode.QUAT_LERP){
 				Quat startQ = new Quat(startRot);
 				Quat endQ = new Quat(endRot);
-				Quat ratioQ = endQ.clone().add(startQ.clone().negate()).add(startQ);
+				
+				Quat QoneMinusAlphaT0 = startQ.clone().scale(1-ratio);
+				Quat QalphaT1 = endQ.clone().scale(ratio);
+				
+				Quat ratioQ = QoneMinusAlphaT0.add(QalphaT1);
 				ratioQ.toRotationMatrix(ratioRot);
 			}
 			else{
