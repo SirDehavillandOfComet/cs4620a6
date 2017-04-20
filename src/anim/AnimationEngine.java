@@ -181,8 +181,6 @@ public class AnimationEngine {
 		// And Update Transformations Accordingly
 		// (You WILL Need To Use this.scene)
 		for(AnimTimeline a: timelines.values()){
-			System.out.println("--- start ---");
-			System.out.println(a.object);
 			// get pair of surrounding frames
 			// (function in AnimTimeline)
 			int f = this.curFrame;
@@ -191,10 +189,7 @@ public class AnimationEngine {
 							
 			Matrix4 start = surroundingPair[0].transformation;
 			Matrix4 end = surroundingPair[1].transformation;
-			
-			System.out.println("start = " + start);
-			System.out.println("end = " + end);
-			
+
 			// get interpolation ratio
 			float ratio = getRatio(surroundingPair[0].frame, surroundingPair[1].frame, f);
 			
@@ -211,22 +206,17 @@ public class AnimationEngine {
 			Matrix3 startRS = new Matrix3(start.getAxes());
 			Matrix3 endRS = new Matrix3(end.getAxes());
 			
-			System.out.println("startRs = " + startRS);
-			System.out.println("endRs = " + endRS);
-			
 			Matrix3 startScale = new Matrix3();
 			Matrix3 endScale = new Matrix3();
 			
 			Matrix3 startRot = new Matrix3();
 			Matrix3 endRot = new Matrix3();
 			
-			//outQ rotation, outP is scale
 			startRS.polar_decomp(startRot, startScale);
 			endRS.polar_decomp(endRot, endScale);
 			
 		    // interpolate rotation matrix (3 modes of interpolation) and linearly interpolate scales
 			Matrix3 ratioScale = new Matrix3().interpolate(startScale, endScale, ratio);
-			System.out.println("ratioScale = " + ratioScale);
 			
 			Matrix3 ratioRot = new Matrix3();
 			if(rotationMode == rotationMode.EULER){
@@ -257,7 +247,7 @@ public class AnimationEngine {
 						(float) Math.sin(ratioThetaZ), (float) Math.cos(ratioThetaZ), 0.0f,
 						0.0f, 0.0f, 1.0f);
 
-				ratioScale.set(rZ.clone().mulBefore(rY.clone().mulBefore(rX)));
+				ratioRot.set(rZ.clone().mulBefore(rY.clone().mulBefore(rX)));
 			}
 			else if(rotationMode == rotationMode.QUAT_LERP){
 				Quat startQ = new Quat(startRot);
@@ -278,22 +268,16 @@ public class AnimationEngine {
 
 			// combine interpolated R,S,and T
 			Matrix3 newRS = new Matrix3();
-			//FIX THIS: FUNCTION ISN'T OUTPUTTING WHAT IT SHOULD
-			newRS.set(ratioRot.clone().mulAfter(ratioScale));
+			newRS.set(ratioRot.clone().mulBefore(ratioScale.clone()));
 			
-			System.out.println("RatioRot" +ratioRot);
-			System.out.println("NewRS" + newRS);
 			Matrix4 transform = new Matrix4(newRS);
 			transform.set(0, 3, ratioTranslate.x);
 			transform.set(1, 3, ratioTranslate.y);
 			transform.set(2, 3, ratioTranslate.z);
 			
 			a.object.transformation.set(transform);
-			System.out.println("Final Transform " + transform);
-			//System.out.println("");
 			this.scene.sendEvent(new SceneTransformationEvent(a.object));
 		}
-		System.out.println("--- end ---");
 	}
 
 	public static float getRatio(int min, int max, int cur) {
